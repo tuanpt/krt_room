@@ -11,6 +11,7 @@
         <link rel="stylesheet" href="bower_components/demo-console/index.css">
         <link rel="stylesheet" href="bower_components/ekko-lightbox/dist/ekko-lightbox.min.css">
         <link rel="stylesheet" href="css/kurento.css">
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css">
         <script src="bower_components/adapter.js/adapter.js"></script>
         <script src="bower_components/jquery/dist/jquery.min.js"></script>
         <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
@@ -42,53 +43,36 @@
             </div>
         </header>
         <div class="container">
-            <div class="page-header">
-                <h1>Tutorial 4: Video Call 1 to 1 with WebRTC</h1>
-                <p>
-                This web application consists on an one to one video call using <a
-                href="http://www.webrtc.org/">WebRTC</a>. In other words, this
-                application is similar to a phone but also with video. The <a
-                href="img/pipeline.png" data-toggle="lightbox"
-                data-title="Video Call 1 to 1 Media Pipeline"
-                data-footer="Two interconnected WebRtcEnpoints Media Elements">Media
-                Pipeline</a> is composed by two interconnected <i>WebRtcEndpoints</i>.
-                To run this demo follow these steps:
-                </p>
-                <ol>
-                    <li>Open this page with a browser compliant with WebRTC (Chrome, Firefox).</li>
-                    <li>Type a nick in the field <i>Name</i> and click on <i>Register</i>.</li>
-                    <li>In a different machine (or a different tab in the same browser) follow the same procedure to register another user.</li>
-                    <li>Type the name of the user to be called in the field <i>Peer</i> and click <i>Call</i>.</li>
-                    <li>Grant the access to the camera and microphone for both users. After the SDP negotiation the communication should start.</li>
-                    <li>The called user should accept the incoming call (by a confirmation dialog).</li>
-                    <li>Click on <i>Stop</i> to finish the communication.</li>
-                </ol>
-            </div>
+            <br><br>
             <div class="row">
                 <div class="col-md-5">
                     <div class="row">
-                        <div class="col-md-6">
-                            <label class="control-label" for="txt-first-name">Name</label>
-                            <input id="txt-first-name" name="txt-first-name" class="form-control" type="text" hint="First Name"/>
-                            <label class="control-label" for="txt-last-name">Last Name</label>
-                            <input type="text" name="txt-last-name" id="txt-last-name" value="" class="form-control" hint="Last Name">
-                            <label class="control-label" for="txt-email-address">Email Address</label>
-                            <input type="text" name="txt-email-address" id="txt-email-address" value="" class="form-control" hint="Email">
-                            <label class="control-label" for= "txt-password">Password</label>
-                            <input type="password" name="txt-password" id="txt-password" value="" class="form-control" hint="Password">
-                            <label class="control-label" for="txt-password-confirm">Confirm Password</label>
-                            <input type="password" name="txt-password-confirm" id="txt-password-confirm" value="" class="form-control" hint="Confirm Password">
-                            <br>
-                            <div class="col-md-6 text-bottom">
-                                <a id="register" href="#" class="btn btn-primary">
-                                <span class="glyphicon glyphicon-plus"></span> Register</a>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <a id="register" href="#" class="btn btn-default"><span class="fa fa-user"></span> Register</a>
                             </div>
-                            <div class="col-md-6 text-bottom">
-                                <a id="signIn" href="#" class="btn btn-primary">
-                                <span class="glyphicon glyphicon-plus"></span> Sign In</a>
+                            <div class="col-md-3">
+                                <a id="signIn" href="#" class="btn btn-default"><span class="fa fa-user"></span> Sign In</a>
+                            </div>
+                            <div class="col-md-3">
+                                <a id="authFacebook" href="#" class="btn btn-primary">
+                                <span class="fa fa-facebook"></span> Facebook</a>
+                            </div>
+                            <div class="col-md-3">
+                                <a id="authGoogle" href="#" class="btn btn-danger"><span class="fa fa-google-plus"></span> Google+</a>
                             </div>
                         </div>
-
+                        <br>
+                        <label class="control-label" for="txt-first-name">Name</label>
+                        <input id="txt-first-name" name="txt-first-name" class="form-control" type="text" hint="First Name"/>
+                        <label class="control-label" for="txt-last-name">Last Name</label>
+                        <input type="text" name="txt-last-name" id="txt-last-name" value="" class="form-control" hint="Last Name">
+                        <label class="control-label" for="txt-email-address">Email Address</label>
+                        <input type="text" name="txt-email-address" id="txt-email-address" value="" class="form-control" hint="Email">
+                        <label class="control-label" for= "txt-password">Password</label>
+                        <input type="password" name="txt-password" id="txt-password" value="" class="form-control" hint="Password">
+                        <label class="control-label" for="txt-password-confirm">Confirm Password</label>
+                        <input type="password" name="txt-password-confirm" id="txt-password-confirm" value="" class="form-control" hint="Confirm Password">
                     </div>
                     <br/>
                     <br/>
