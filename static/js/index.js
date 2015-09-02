@@ -104,7 +104,7 @@ window.onload = function() {
     var drag = new Draggabilly(document.getElementById('videoSmall'));
     videoInput = document.getElementById('videoInput');
     videoOutput = document.getElementById('videoOutput');
-    document.getElementById('txt-first-name').focus();
+    // document.getElementById('txt-first-name').focus();
     document.getElementById('register').addEventListener('click', function() {
         register();
     });
@@ -116,7 +116,7 @@ window.onload = function() {
     });
     document.getElementById('signIn').addEventListener('click', function(){
         signIn();
-    });
+    });    
 }
 window.onbeforeunload = function() {
     ws.close();
