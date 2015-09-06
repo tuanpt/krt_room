@@ -20,28 +20,28 @@
         <script src="bower_components/ekko-lightbox/dist/ekko-lightbox.min.js"></script>
         <script src="bower_components/kurento-utils/js/kurento-utils.js"></script>
         <script src="js/index.js"></script>
-        <title>Kurento Tutorial 4: Video Call 1 to 1 with WebRTC</title>
+        <title>Video Call 1 to 1 with WebRTC</title>
     </head>
     <body>
-        <header>
-            <div class="navbar navbar-inverse navbar-fixed-top">
-                <div class="container">
-                    <div class="navbar-header">
-                        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse"></button>
-                        <a class="navbar-brand" href=".">Kurento Tutorial</a>
-                    </div>
-                    <div class="collapse navbar-collapse"
-                        id="bs-example-navbar-collapse-1">
-                        <ul class="nav navbar-nav navbar-right">
-                            <li>
-                                <a href="https://github.com/Kurento/kurento-tutorial-node/tree/develop/kurento-one2one-call">
-                                <span class="glyphicon glyphicon-file"></span> Source Code</a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </header>
+        <!-- <header>
+                        <div class="navbar navbar-inverse navbar-fixed-top">
+                                <div class="container">
+                                        <div class="navbar-header">
+                                                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse"></button>
+                                                <a class="navbar-brand" href=".">Kurento Tutorial</a>
+                                        </div>
+                                        <div class="collapse navbar-collapse"
+                                                id="bs-example-navbar-collapse-1">
+                                                <ul class="nav navbar-nav navbar-right">
+                                                        <li>
+                                                                <a href="https://github.com/Kurento/kurento-tutorial-node/tree/develop/kurento-one2one-call">
+                                                                <span class="glyphicon glyphicon-file"></span> Source Code</a>
+                                                        </li>
+                                                </ul>
+                                        </div>
+                                </div>
+                        </div>
+        </header> -->
         <div class="container">
             <br><br>
             <div class="row">
@@ -76,6 +76,21 @@
                     </div>
                     <br/>
                     <br/>
+                    <label class="control-label" for="room">Room</label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <input id="roomNumber" name="room" class="form-control" type="text">
+                        </div>
+                        <div class="col-md-6 text-bottom">
+                            <a id="joinRoom" href="#" class="btn btn-success"><span class="glyphicon glyphicon-play"></span> Join Room</a>
+                        </div>
+                    </div>
+                    <div id="room" style="display: none;">
+                        <h2 id="room-header"></h2>
+                        <div id="participants"></div>
+                        <input type="button" id="button-leave" onmouseup="leaveRoom();"
+                        value="Leave room">
+                    </div>
                     <label class="control-label" for="peer">Peer</label>
                     <div class="row">
                         <div class="col-md-6">
