@@ -16,7 +16,7 @@ var ws = new WebSocket('ws://' + location.host + '/one2one');
 var videoInput;
 var videoOutput;
 var webRtcPeer;
-var registerName = null;
+var name;
 const NOT_REGISTERED = 0;
 const REGISTERING = 1;
 const REGISTERED = 2;
@@ -117,6 +117,9 @@ window.onload = function() {
     document.getElementById('signIn').addEventListener('click', function(){
         signIn();
     });    
+    document.getElementById('joinRoom').addEventListener('click', function(){
+        createRoom();
+    });
 }
 window.onbeforeunload = function() {
     ws.close();
@@ -131,6 +134,19 @@ ws.onmessage = function(message) {
         case 'signinResponse':
             signInReponse(parsedMessage);
             break;
+        case 'existingParticipants':
+            onExistingParticipants(parsedMessage);
+            break;
+        case 'newParticipantArrived':
+            onNewParticipant(parsedMessage);
+            break;
+        case 'receiveVideoAnswer':
+        receiveVideoResponse(parsedMessage);
+                
+        case 'joinRoomResponse':
+                console.log('joinRoom_____________');
+//      joinRoomResponse(parsedMessage);
+        break;
         case 'callResponse':
             callResponse(parsedMessage);
             break;
@@ -328,6 +344,50 @@ function signIn() {
     document.getElementById('peer').focus();
 }
 
+function createRoom(){
+    name = document.getElementById('txt-email-address').value;
+    var room = document.getElementById('roomNumber').value;
+    document.getElementById('room-header').innerText = 'ROOM ' + room;
+    // document.getElementById('join').style.display = 'none';
+    document.getElementById('room').style.display = 'block';
+
+    var message = {
+        id : 'joinRoom',
+        name : name,
+        room : room,
+    }
+    sendMessage(message);
+}
+
+function onNewParticipant(request) {
+    receiveVideo(request.name);
+}
+
+function receiveVideoResponse(result) {
+    participants[result.name].rtcPeer.processSdpAnswer(result.sdpAnswer);
+}
+
+function onExistingParticipants(msg) {
+    var constraints = {
+        audio : true,
+        video : {
+            mandatory : {
+                maxWidth : 320,
+                maxFrameRate : 15,
+                minFrameRate : 15
+            }
+        }
+    };
+    console.log(name + " registered in room " + room);
+    var participant = new Participant(name);
+    participants[name] = participant;
+    var video = participant.getVideoElement();
+    participant.rtcPeer = kurentoUtils.WebRtcPeer.startSendOnly(video,
+            participant.offerToReceiveVideo.bind(participant), null,
+            constraints);
+    msg.data.forEach(receiveVideo);
+}
+
 function call() {
     if (document.getElementById('peer').value == '') {
         window.alert("You must specify the peer name");
@@ -389,6 +449,14 @@ function onIceCandidate(candidate) {
         candidate: candidate
     }
     sendMessage(message);
+}
+
+function receiveVideo(sender) {
+    var participant = new Participant(sender);
+    participants[sender] = participant;
+    var video = participant.getVideoElement();
+    participant.rtcPeer = kurentoUtils.WebRtcPeer.startRecvOnly(video,
+            participant.offerToReceiveVideo.bind(participant));
 }
 
 function showSpinner() {

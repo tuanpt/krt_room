@@ -76,6 +76,18 @@ function UserSession(id, name, ws) {
     this.sdpOffer = null;
 }
 UserSession.prototype.sendMessage = function(message) {
+    this.ws.send(JSON.stringify(message));
+}
+
+function UserSessionRoom(id, name, ws, room) {
+    this.id = id;
+    this.name = name;
+    this.ws = ws;
+    this.sdpOffer = null;
+    this.webRTCEndpoint = null;
+    this.room = room;
+}
+UserSessionRoom.prototype.sendMessage = function(message) {
         this.ws.send(JSON.stringify(message));
     }
     // Represents registrar of users
@@ -120,17 +132,31 @@ UserSignin.prototype.getByEmail = function(name) {
     return this.usersByEmail[name];
 }
 UserSignin.prototype.removeById = function(id) {
-        var userSession = this.usersById[id];
-        if (!userSession) return;
-        delete this.usersById[id];
-        delete this.usersByEmail[userSession.name];
+    var userSession = this.usersById[id];
+    if (!userSession) return;
+    delete this.usersById[id];
+    delete this.usersByEmail[userSession.name];
 }
 UserSignin.prototype.logOut = function(id) {
-    var user = this.getById(id);
-    if (user) delete this.usersById[id]
-    if (user && this.getByEmail(user.name)) delete this.usersByEmail[user.name];
+        var user = this.getById(id);
+        if (user) delete this.usersById[id]
+        if (user && this.getByEmail(user.name)) delete this.usersByEmail[user.name];
 }
-    // Represents a B2B active call
+
+UserSignin.prototype.getUsersByRoom = function (room) {
+    var userList = this.usersByEmail;
+    var usersInRoomList = [];
+    for(var i in userList) {
+        if (userList[i].room === room) {
+            usersInRoomList.push(userList[i]);
+            console.log("user by room for loop: " + usersInRoomList);
+        }
+    }
+
+    return usersInRoomList;
+}
+
+// Represents a B2B active call
 function CallMediaPipeline() {
     this.pipeline = null;
     this.webRtcEndpoint = {};
@@ -247,7 +273,25 @@ wss.on('connection', function(ws) {
             case 'signin':
                 signIn(sessionId, message.email, message.password, ws);
                 break;
-            case 'call':                
+            case 'joinRoom':
+                joinRoom(sessionId, message.name, ws, message.room);
+                break;
+            case 'receiveVideoFrom':
+                receiveVideoFrom(userSessionRoom, message.sender, message.sdpOffer, function (error, sdpAnswer) {
+                    if (error) {
+                        console.log(error);
+                    }
+                    data = {
+                        id: 'receiveVideoAnswer',
+                        name: message.sender,
+                        sdpAnswer: sdpAnswer
+                    };
+                    return ws.send(JSON.stringify(data));
+                });
+
+                break;
+
+            case 'call':
                 call(sessionId, message.to, message.from, message.sdpOffer);
                 break;
             case 'incomingCallResponse':
@@ -268,6 +312,92 @@ wss.on('connection', function(ws) {
         }
     });
 });
+
+function receiveVideoFrom(currentUser, senderName, sdp, callback)
+{
+    var sender = userSignin.getByEmail(senderName);
+    if (pipeline === null) {
+        getKurentoClient(function (error, kurentoClient) {
+            kurentoClient.create('MediaPipeline', function (error, _pipeline) {
+                if (error) {
+                    return callback(error);
+                }
+                pipeline = _pipeline;
+                pipeline.create('WebRtcEndpoint', function (error, webRtcEndpoint) {
+
+                    if (error) {
+                        console.log(error);
+                    }
+                    currentUser.webRTCEndpoint = webRtcEndpoint;
+                    userSignin.usersById[currentUser.id] = currentUser;
+                    userSignin.usersByEmail[currentUser.name] = currentUser;
+                    incomingMedia[currentUser.name] = webRtcEndpoint;
+                    console.log("Created Pipeline & rtcEndpoint");
+                    webRtcEndpoint.processOffer(sdp, function (error, sdpAnswer) {
+                        callback(null, sdpAnswer);
+                    });
+                });
+            }
+            )
+        });
+    } else {
+        console.log("Sender name::" + sender.name);
+        senderName = sender.name;
+        if (incomingMedia[senderName]) {
+
+            pipeline.create('WebRtcEndpoint', function (err, webRtcEndpoint) {
+
+                webRtcEndpoint.processOffer(sdp, function (err, sdpAnswer) {
+                    incomingMedia[senderName].connect(webRtcEndpoint, function () {
+                        callback(null, sdpAnswer);
+                    });
+
+
+                });
+            });
+
+        } else {
+            pipeline.create('WebRtcEndpoint', function (error, webRtcEndpoint) {
+                if (error) {
+                    console.log(error);
+                }
+                incomingMedia[sender.name] = webRtcEndpoint;
+                sender.webRTCEndpoint = webRtcEndpoint;
+                userSignin.usersById[sender.id] = sender;
+                userSignin.usersByEmail[sender.name] = sender;
+                webRtcEndpoint.processOffer(sdp, function (err, sdpAnswer) {
+                    if (err) {
+                        console.log(err);
+                    }
+                    callback(null, sdpAnswer);
+                });
+                notifyOthers(currentUser.name);
+            });
+
+        }
+    }
+}
+
+function notifyOthers(newParticipant)
+{
+    var myRoom = userSessionRoom.room;
+    
+    if (userSignin) {
+        var peers = userSignin.getUsersByRoom(myRoom);
+        for (var i in peers) {
+            peer = peers[i];
+            console.log(peer.name);
+            if (peer.name !== newParticipant && peer.ws!==undefined) {
+                console.log("Notifying " + peer.name +"===SOCKET::"+ peer.ws);
+                peer.ws.send(JSON.stringify({
+                    id: 'newParticipantArrived',
+                    name: newParticipant
+                }));
+            }
+        }
+    }
+}
+
 // Recover kurentoClient for the first time.
 function getKurentoClient(callback) {
     if (kurentoClient !== null) {
@@ -303,6 +433,51 @@ function stop(sessionId) {
         stoppedUser.sendMessage(message)
     }
     clearCandidatesQueue(sessionId);
+}
+
+function joinRoom(sessionId, name, ws, room) {
+    registerRoom(sessionId, name, ws, room);
+}
+
+var userSessionRoom = null;
+function registerRoom(id, name, ws, room, callback) {
+    function onError(error) {
+        console.log("Error processing register: " + error);
+        ws.send(JSON.stringify({
+            id: 'registerRoomResponse',
+            response: 'rejected ',
+            message: error
+        }));
+    }
+    if (!name) {
+        return onError("empty user name");
+    }
+    // if (userSignin.getByEmail(name)) {
+    //     return onError("already registered");
+    // }
+    console.log("user session room: " + id + "\t" + name + "\t" + room);
+    userSignin.signin(new UserSessionRoom(id, name, ws, room));
+    try {
+        //      ws.send(JSON.stringify({id: 'registerResponse', response: 'accepted'}));
+        var participants = [];
+        // if (userSignin) {
+            participantsName = userSignin.getUsersByRoom(room);
+            console.log("participant name: " + participantsName);
+            for (var i in participantsName) {
+                if (name === participantsName[i].name || participantsName[i].name == "") {
+                    continue;
+                }
+                participants.push(participantsName[i].name);
+                console.log(participants);
+            }
+        // }
+        ws.send(JSON.stringify({
+            id: "existingParticipants",
+            data: participants
+        }));
+    } catch (exception) {
+        onError(exception);
+    }
 }
 
 function incomingCallResponse(calleeId, from, callResponse, calleeSdp, ws) {
@@ -373,7 +548,7 @@ function call(callerId, to, from, sdpOffer) {
     clearCandidatesQueue(callerId);
     var caller = userSignin.getById(callerId);
     var accountRoute = new AccountRoute();
-    var apiMessageAlert = new apiMessages();        
+    var apiMessageAlert = new apiMessages();
     accountRoute.readUserByEmail(to, function(readUserCallResponse) {
         console.log("call " + readUserCallResponse.success);
         if (readUserCallResponse.success) {
@@ -393,10 +568,14 @@ function call(callerId, to, from, sdpOffer) {
                 } catch (exception) {
                     rejectCause = "Error " + exception;
                 }
-            }else{
-                return caller.sendMessage({id: 'callResponse', response: 'rejected: ', message: 'nguoi duoc goi khong online'});
+            } else {
+                return caller.sendMessage({
+                    id: 'callResponse',
+                    response: 'rejected: ',
+                    message: 'nguoi duoc goi khong online'
+                });
             }
-        }                
+        }
         var message = {
             id: 'callResponse',
             response: 'rejected: ',
